@@ -9,51 +9,90 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Url
 
-// 1. Nowy Enum ułatwiający sterowanie z poziomu UI i hermetyzację ścieżek
 enum class EndpointType(val prefix: String) {
     MOVIE("movie/"),
-    LIST("list/")
+    LIST("list/"),
+    POSTER(""),
+    HOMEPAGE_LIST("movie/")
+
 }
 
 data class ApiResult(
     val fullUrl: String,
-    val jsonBody: String
+    val responseText: String,
+    val isImage: Boolean
 )
 
-interface TmdbDynamicApi {
+interface TmdbApi {
     @GET
-    suspend fun getRawResponse(
+    suspend fun getResponse(
         @Url endpoint: String,
-        @Query("api_key") apiKey: String,
-        @Query("language") language: String = "pl-PL"
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false,
+        @Query("append_to_response") appendToResponse: String? = null
     ): Response<ResponseBody>
 }
 
 object ApiManager {
     private const val BASE_URL = "https://api.themoviedb.org/3/"
+    private const val IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w300"
+    private const val API_KEY = "7a0cf0cb349b8912480426231b4faf51"
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(BASE_URL) // NAPRAWIONO BŁĄD: baseUrl jest absolutnie wymagane przez Retrofita!
         .build()
 
-    private val api = retrofit.create(TmdbDynamicApi::class.java)
+    private val api = retrofit.create(TmdbApi::class.java)
 
-    // 2. Funkcja przyjmuje teraz typ endpointu, a następnie sama buduje ostateczny URL
-    suspend fun fetchRawJson(type: EndpointType, input: String, apiKey: String): Result<ApiResult> {
+    suspend fun fetchApiData(type: EndpointType, input: String): Result<ApiResult> {
         return withContext(Dispatchers.IO) {
             try {
-                // Automatyczne doklejanie odpowiedniego fragmentu (np. "movie/" + "popular")
-                val fullEndpoint = "${type.prefix}$input"
-                val response = api.getRawResponse(fullEndpoint, apiKey)
+                val fullUrlOrPath = if (type == EndpointType.POSTER) {
+                    "$IMAGE_BASE_URL$input"
+                } else {
+                    "$BASE_URL${type.prefix}$input"
+                }
 
-                val fullUrl = response.raw().request.url.toString()
+                val response = when (type) {
+                    EndpointType.MOVIE -> api.getResponse(
+                        endpoint = fullUrlOrPath,
+                        apiKey = API_KEY,
+                        language = "pl-PL",
+                        appendToResponse = "credits"
+                    )
+                    EndpointType.LIST -> api.getResponse(
+                        endpoint = fullUrlOrPath,
+                        apiKey = API_KEY,
+                        language = "pl-PL",
+                        appendToResponse = null
+                    )
+                    EndpointType.POSTER -> api.getResponse(
+                        endpoint = fullUrlOrPath,
+                        apiKey = null,
+                        language = null,
+                        appendToResponse = null
+                    )
+//                    EndpointType.HOMEPAGE_LIST -> api.getResponse(
+//                      //sklejenie 4 równoległych calli w jeden zwracany obiekt ładowany do infinite scrolla
+//                    )
+                }
+                val finalUrl = response.raw().request.url.toString()
 
                 if (response.isSuccessful) {
-                    val jsonString = response.body()?.string() ?: "Pusta odpowiedź"
-                    Result.success(ApiResult(fullUrl, jsonString))
+                    val isImage = type == EndpointType.POSTER
+
+                    val responseString = if (isImage) {
+                        "Plakat został załadowany z powodzeniem."
+                    } else {
+                        response.body()?.string() ?: "Pusta odpowiedź"
+                    }
+
+                    // Zwracamy naszą ulepszoną klasę ApiResult
+                    Result.success(ApiResult(finalUrl, responseString, isImage))
                 } else {
-                    val errorString = response.errorBody()?.string() ?: "Nieznany błąd HTTP"
-                    Result.failure(Exception("Kod ${response.code()}: $errorString\nURL: $fullUrl"))
+                    val errorString = response.errorBody()?.string() ?: "Nieznany błąd"
+                    Result.failure(Exception("Kod HTTP ${response.code()}: $errorString\nURL: $finalUrl"))
                 }
             } catch (e: Throwable) {
                 Result.failure(e)

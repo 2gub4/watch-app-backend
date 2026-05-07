@@ -11,10 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -23,9 +23,6 @@ import com.js.backendassembly.data.api.EndpointType
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-    // KLUCZ DO TESTÓW (w produkcji należy go ukryć!)
-    private val apiKey = "7a0cf0cb349b8912480426231b4faf51"
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -34,24 +31,23 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ApiTesterScreen(apiKey)
+                    ApiTesterScreen()
                 }
             }
         }
     }
 }
 
-// Tryby pracy UI - zachowane bez zmian
 enum class QueryMode(val displayName: String) {
     MOVIE("Film (JSON)"),
     LIST("Lista (JSON)"),
-    POSTER("Plakat (Obraz)")
+    POSTER("Plakat (Obraz)"),
+    HOMEPAGE_LIST("Filmy na strone glowna (JSON)")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ApiTesterScreen(apiKey: String) {
-    // --- STANY (zachowane bez zmian) ---
+fun ApiTesterScreen() {
     var endpointInput by remember { mutableStateOf("popular") }
     var resultText by remember { mutableStateOf("Wynik pojawi się tutaj") }
     var requestedUrl by remember { mutableStateOf("") }
@@ -60,20 +56,15 @@ fun ApiTesterScreen(apiKey: String) {
     var currentImageUrl by remember { mutableStateOf<String?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
-    val state = rememberScrollState() // State dla scrollowania całej kolumny
-    val IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200" // Wersja 780 dla lepszej jakości na dużym UI
+    val pageNumber = "1"
 
-    // GŁÓWNA KOLUMNA - teraz układamy elementy od GÓRY
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp), // Boczne dopełnienie
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- 1. PRZESUNIĘCIE INTERFEJSU W DÓŁ ---
         Spacer(modifier = Modifier.height(64.dp))
-
-        // --- 2. POWIĘKSZONE DROPDOWN MENU ---
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
@@ -83,14 +74,13 @@ fun ApiTesterScreen(apiKey: String) {
                 value = selectedMode.displayName,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Zasób", fontSize = 18.sp) }, // Powiększona etykieta
+                label = { Text("Zasób", fontSize = 18.sp) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                // POWIĘKSZONY TEKST I WYSOKOŚĆ
                 textStyle = TextStyle(fontSize = 24.sp),
                 modifier = Modifier
-                    .menuAnchor()
+                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
                     .fillMaxWidth()
-                    .height(80.dp), // Zwiększona wysokość pola
+                    .height(80.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = MaterialTheme.colorScheme.primary
                 )
@@ -99,20 +89,19 @@ fun ApiTesterScreen(apiKey: String) {
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                QueryMode.values().forEach { mode ->
+                QueryMode.entries.forEach { mode ->
                     DropdownMenuItem(
                         text = {
-                            // POWIĘKSZONY TEKST W MENU
                             Text(mode.displayName, fontSize = 22.sp, modifier = Modifier.padding(vertical = 8.dp))
                         },
                         onClick = {
                             selectedMode = mode
                             expanded = false
-                            // Logika podpowiedzi - zachowana
                             endpointInput = when (mode) {
-                                QueryMode.MOVIE -> "popular"
+                                QueryMode.MOVIE -> "11"
                                 QueryMode.LIST -> "1"
-                                QueryMode.POSTER -> "/yUiXA68FfQeA8cRBhd0Ao0jIRZt.jpg"
+                                QueryMode.POSTER -> "/pWVLFh4OuejTpUaDQbB1C4zoS2p.jpg"
+                                QueryMode.HOMEPAGE_LIST -> "now_playing?page=$pageNumber"
                             }
                         }
                     )
@@ -122,56 +111,57 @@ fun ApiTesterScreen(apiKey: String) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // --- 3. POWIĘKSZONE POLE TEKSTOWE DANYCH ---
         OutlinedTextField(
             value = endpointInput,
             onValueChange = { endpointInput = it },
             label = { Text("ID, path lub parametr", fontSize = 18.sp) },
-            // POWIĘKSZONY TEKST I WYSOKOŚĆ
             textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Medium),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(85.dp), // Zwiększona wysokość
+                .height(85.dp),
             singleLine = true
         )
-
         Spacer(modifier = Modifier.height(24.dp))
-
-        // --- 4. POTĘŻNY PRZYCISK ---
         Button(
             onClick = {
-                // Logika przycisku - zachowana bez zmian
                 requestedUrl = ""
                 currentImageUrl = null
                 resultText = "⏳ Przetwarzanie..."
 
-                if (selectedMode == QueryMode.POSTER) {
-                    val fullImageUrl = "$IMAGE_BASE_URL$endpointInput"
-                    requestedUrl = fullImageUrl
-                    currentImageUrl = fullImageUrl
-                    resultText = "Ładowanie grafiki..."
-                } else {
-                    val endpointType = if (selectedMode == QueryMode.MOVIE) EndpointType.MOVIE else EndpointType.LIST
-                    coroutineScope.launch {
-                        val result = ApiManager.fetchRawJson(endpointType, endpointInput, apiKey)
-                        result.fold(
-                            onSuccess = { apiResult ->
-                                requestedUrl = apiResult.fullUrl
-                                resultText = apiResult.jsonBody
-                            },
-                            onFailure = { error ->
-                                resultText = "❌ Błąd:\n${error.localizedMessage}"
+                // NAPRAWIONO LOGIKĘ: Obsługa wszystkich 3 trybów poprawnie
+                val endpointType = when (selectedMode) {
+                    QueryMode.MOVIE -> EndpointType.MOVIE
+                    QueryMode.LIST -> EndpointType.LIST
+                    QueryMode.POSTER -> EndpointType.POSTER
+                    QueryMode.HOMEPAGE_LIST -> EndpointType.HOMEPAGE_LIST
+                }
+
+                coroutineScope.launch {
+                    val result = ApiManager.fetchApiData(endpointType, endpointInput)
+                    result.fold(
+                        onSuccess = { apiResult ->
+                            requestedUrl = apiResult.fullUrl
+
+                            // NOWA LOGIKA: React on info from backend
+                            if (apiResult.isImage) {
+                                currentImageUrl = apiResult.fullUrl // Przekazujemy url obrazu do Coila
+                                resultText = ""
+                            } else {
+                                currentImageUrl = null
+                                resultText = apiResult.responseText // Wyświetlamy tekst JSON
                             }
-                        )
-                    }
+                        },
+                        onFailure = { error ->
+                            resultText = "❌ Błąd:\n${error.localizedMessage}"
+                        }
+                    )
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(75.dp), // Bardzo wysoki przycisk
+                .height(75.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
-            // POTĘŻNY TEKST NA PRZYCISKU
             Text("PRZETESTUJ", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp)
         }
 
@@ -179,16 +169,13 @@ fun ApiTesterScreen(apiKey: String) {
         HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- 5. SEKCJA WYNIKÓW Z SCOLLEM ---
-        // Używamy .weight(1f), aby ta kolumna zajęła całą resztę ekranu
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .verticalScroll(rememberScrollState()) // WŁĄCZAMY SCROLLOWANIE WYNIKÓW
+                .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp)
         ) {
-            // Podgląd URL (jeśli istnieje)
             if (requestedUrl.isNotEmpty()) {
                 Text(
                     text = "WYSŁANO NA:",
@@ -205,23 +192,31 @@ fun ApiTesterScreen(apiKey: String) {
                 )
             }
 
-            // --- RENDEROWANIE WYNIKU (zachowana logika) ---
             if (currentImageUrl != null) {
-                // Widok OBRAZU
-                AsyncImage(
-                    model = currentImageUrl,
-                    contentDescription = "Pobrany plakat",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight(), // Obraz zajmuje tyle wysokości, ile potrzebuje
-                    contentScale = ContentScale.FillWidth // Skalujemy do szerokości
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    AsyncImage(
+                        model = currentImageUrl,
+                        contentDescription = "Pobrany plakat",
+                        modifier = Modifier.wrapContentHeight()
+                    )
+                    AsyncImage(
+                        model = currentImageUrl,
+                        contentDescription = "Pobrany plakat",
+                        modifier = Modifier.wrapContentHeight()
+                    )
+                    AsyncImage(
+                        model = currentImageUrl,
+                        contentDescription = "Pobrany plakat",
+                        modifier = Modifier.wrapContentHeight()
+                    )
+                }
             } else {
-                // Widok JSON (Tekstowy)
                 Text(
                     text = resultText,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 18.sp, // Zwiększony font JSONa dla czytelności
+                    fontSize = 18.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
