@@ -1,6 +1,7 @@
 package com.js.backendassembly.data.api
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -14,7 +15,6 @@ enum class EndpointType(val prefix: String) {
     LIST("list/"),
     POSTER(""),
     HOMEPAGE_LIST("movie/")
-
 }
 
 data class ApiResult(
@@ -39,8 +39,10 @@ object ApiManager {
     private const val IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w300"
     private const val API_KEY = "7a0cf0cb349b8912480426231b4faf51"
 
+    private const val LANG = "en-US"
+
     private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL) // NAPRAWIONO BŁĄD: baseUrl jest absolutnie wymagane przez Retrofita!
+        .baseUrl(BASE_URL)
         .build()
 
     private val api = retrofit.create(TmdbApi::class.java)
@@ -48,7 +50,30 @@ object ApiManager {
     suspend fun fetchApiData(type: EndpointType, input: String): Result<ApiResult> {
         return withContext(Dispatchers.IO) {
             try {
-                val fullUrlOrPath = if (type == EndpointType.POSTER) {
+                if (type == EndpointType.HOMEPAGE_LIST) {
+                    //dodać każdorazowo inkrementowaną zmienną i obsłużyć ją w getResponse(), aby otrzymywać strony wyników
+                    val popularRes = async { api.getResponse("${BASE_URL}movie/popular", API_KEY, LANG) }
+                    val topRatedRes = async { api.getResponse("${BASE_URL}movie/top_rated", API_KEY, LANG) }
+                    val upcomingRes = async { api.getResponse("${BASE_URL}movie/upcoming", API_KEY, LANG) }
+                    val nowPlayingRes = async { api.getResponse("${BASE_URL}movie/now_playing", API_KEY, LANG) }
+                    val responseComponents = listOf(
+                        "popular" to popularRes.await(),
+                        "topRated" to topRatedRes.await(),
+                        "upcoming" to upcomingRes.await(),
+                        "nowPlaying" to nowPlayingRes.await()
+                    )
+                    val combinedUrls = responseComponents.joinToString("\n") { it.second.raw().request.url.toString() }
+                    val combinedBodies = responseComponents.joinToString("\n\n") { (category, response) ->
+                        val bodyText = if (response.isSuccessful) {
+                            response.body()?.string() ?: "empty response"
+                        } else {
+                            "ERROR: HTTP ${response.code()}"
+                        }
+                        "• $category movies:\n\n$bodyText"
+                    }
+                    return@withContext Result.success(ApiResult(combinedUrls, combinedBodies, false))
+                }
+                val resourceLocator = if (type == EndpointType.POSTER) {
                     "$IMAGE_BASE_URL$input"
                 } else {
                     "$BASE_URL${type.prefix}$input"
@@ -56,43 +81,37 @@ object ApiManager {
 
                 val response = when (type) {
                     EndpointType.MOVIE -> api.getResponse(
-                        endpoint = fullUrlOrPath,
+                        endpoint = resourceLocator,
                         apiKey = API_KEY,
-                        language = "pl-PL",
+                        language = LANG,
                         appendToResponse = "credits"
                     )
                     EndpointType.LIST -> api.getResponse(
-                        endpoint = fullUrlOrPath,
+                        endpoint = resourceLocator,
                         apiKey = API_KEY,
-                        language = "pl-PL",
+                        language = LANG,
                         appendToResponse = null
                     )
                     EndpointType.POSTER -> api.getResponse(
-                        endpoint = fullUrlOrPath,
+                        endpoint = resourceLocator,
                         apiKey = null,
                         language = null,
                         appendToResponse = null
                     )
-//                    EndpointType.HOMEPAGE_LIST -> api.getResponse(
-//                      //sklejenie 4 równoległych calli w jeden zwracany obiekt ładowany do infinite scrolla
-//                    )
+                    else -> throw IllegalStateException("ERROR: endpoint type out of bounds")
                 }
                 val finalUrl = response.raw().request.url.toString()
-
                 if (response.isSuccessful) {
                     val isImage = type == EndpointType.POSTER
-
                     val responseString = if (isImage) {
-                        "Plakat został załadowany z powodzeniem."
+                        "poster loaded successfully"
                     } else {
-                        response.body()?.string() ?: "Pusta odpowiedź"
+                        response.body()?.string() ?: "empty response"
                     }
-
-                    // Zwracamy naszą ulepszoną klasę ApiResult
                     Result.success(ApiResult(finalUrl, responseString, isImage))
                 } else {
-                    val errorString = response.errorBody()?.string() ?: "Nieznany błąd"
-                    Result.failure(Exception("Kod HTTP ${response.code()}: $errorString\nURL: $finalUrl"))
+                    val errorString = response.errorBody()?.string() ?: "unknown error occured"
+                    Result.failure(Exception("HTTP ${response.code()}: $errorString\nURL: $finalUrl"))
                 }
             } catch (e: Throwable) {
                 Result.failure(e)

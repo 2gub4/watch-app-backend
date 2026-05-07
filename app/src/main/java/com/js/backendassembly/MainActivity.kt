@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -39,17 +38,17 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class QueryMode(val displayName: String) {
-    MOVIE("Film (JSON)"),
-    LIST("Lista (JSON)"),
-    POSTER("Plakat (Obraz)"),
-    HOMEPAGE_LIST("Filmy na strone glowna (JSON)")
+    MOVIE("movie (JSON)"),
+    LIST("watchlist (JSON)"),
+    POSTER("poster (image)"),
+    HOMEPAGE_LIST("app's homepage movies (JSON)")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApiTesterScreen() {
     var endpointInput by remember { mutableStateOf("popular") }
-    var resultText by remember { mutableStateOf("Wynik pojawi się tutaj") }
+    var resultText by remember { mutableStateOf("result will appear here") }
     var requestedUrl by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var selectedMode by remember { mutableStateOf(QueryMode.MOVIE) }
@@ -74,7 +73,7 @@ fun ApiTesterScreen() {
                 value = selectedMode.displayName,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Zasób", fontSize = 18.sp) },
+                label = { Text("resource", fontSize = 18.sp) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 textStyle = TextStyle(fontSize = 24.sp),
                 modifier = Modifier
@@ -114,7 +113,7 @@ fun ApiTesterScreen() {
         OutlinedTextField(
             value = endpointInput,
             onValueChange = { endpointInput = it },
-            label = { Text("ID, path lub parametr", fontSize = 18.sp) },
+            label = { Text("movie_id, poster_path or list_id", fontSize = 18.sp) },
             textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Medium),
             modifier = Modifier
                 .fillMaxWidth()
@@ -126,9 +125,7 @@ fun ApiTesterScreen() {
             onClick = {
                 requestedUrl = ""
                 currentImageUrl = null
-                resultText = "⏳ Przetwarzanie..."
-
-                // NAPRAWIONO LOGIKĘ: Obsługa wszystkich 3 trybów poprawnie
+                resultText = "processing..."
                 val endpointType = when (selectedMode) {
                     QueryMode.MOVIE -> EndpointType.MOVIE
                     QueryMode.LIST -> EndpointType.LIST
@@ -141,18 +138,16 @@ fun ApiTesterScreen() {
                     result.fold(
                         onSuccess = { apiResult ->
                             requestedUrl = apiResult.fullUrl
-
-                            // NOWA LOGIKA: React on info from backend
                             if (apiResult.isImage) {
-                                currentImageUrl = apiResult.fullUrl // Przekazujemy url obrazu do Coila
+                                currentImageUrl = apiResult.fullUrl
                                 resultText = ""
                             } else {
                                 currentImageUrl = null
-                                resultText = apiResult.responseText // Wyświetlamy tekst JSON
+                                resultText = apiResult.responseText
                             }
                         },
                         onFailure = { error ->
-                            resultText = "❌ Błąd:\n${error.localizedMessage}"
+                            resultText = "ERROR:\n${error.localizedMessage}"
                         }
                     )
                 }
@@ -162,7 +157,7 @@ fun ApiTesterScreen() {
                 .height(75.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
-            Text("PRZETESTUJ", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp)
+            Text("test API call", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -178,7 +173,7 @@ fun ApiTesterScreen() {
         ) {
             if (requestedUrl.isNotEmpty()) {
                 Text(
-                    text = "WYSŁANO NA:",
+                    text = "destination url:",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = Color.Gray,
@@ -198,17 +193,17 @@ fun ApiTesterScreen() {
                 ) {
                     AsyncImage(
                         model = currentImageUrl,
-                        contentDescription = "Pobrany plakat",
+                        contentDescription = "recieved image",
                         modifier = Modifier.wrapContentHeight()
                     )
                     AsyncImage(
                         model = currentImageUrl,
-                        contentDescription = "Pobrany plakat",
+                        contentDescription = "recieved image",
                         modifier = Modifier.wrapContentHeight()
                     )
                     AsyncImage(
                         model = currentImageUrl,
-                        contentDescription = "Pobrany plakat",
+                        contentDescription = "recieved image",
                         modifier = Modifier.wrapContentHeight()
                     )
                 }
