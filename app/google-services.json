@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "262446511508",
+    "project_id": "watch-app-jsdr",
+    "storage_bucket": "watch-app-jsdr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:262446511508:android:7e919c3b1cc5f133ddcb81",
+        "android_client_info": {
+          "package_name": "com.js.backendassembly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "262446511508-4toji1rg0moris0ipm2v9tmcg1imfa17.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB-F5XLiS4OYwWGZtaqtiP3Hmtb7CJkVA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "262446511508-4toji1rg0moris0ipm2v9tmcg1imfa17.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
