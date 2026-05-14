@@ -6,10 +6,12 @@ import com.google.firebase.firestore.firestore
 import com.js.backendassembly.data.api.MovieApi
 import com.js.backendassembly.data.api.MovieApiResult
 import com.js.backendassembly.data.models.dbmodels.Rating
-import com.js.backendassembly.data.models.domain.MovieProfile
+import com.js.backendassembly.domain.MovieProfile
 import com.js.backendassembly.data.models.dtos.MovieDetailsDto
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import kotlin.collections.emptyList
 //import com.google.firebase.auth.auth
 
@@ -44,11 +46,11 @@ val testUsr = hashMapOf(
     //"pfp_path" to "pfp.png"
 )
 
-val CURRENT_USER: String = "test_user"
+const val CURRENT_USER: String = "test_user"
 
 
 object MoviesRepository {
-    private val db = Firebase.firestore
+    private val db by lazy { Firebase.firestore }
     //private val auth = Firebase.auth
     private val api = MovieApi
 
@@ -60,34 +62,50 @@ object MoviesRepository {
     }
 
     suspend fun getDbMovieRating(movieId: Int): Rating? {
-        val result = db.collection("users")
-            .document(CURRENT_USER)
-            .collection("ratings")
-            .document("$movieId")
-            .get()
-            .await()
-        return result.toObject(Rating::class.java)
+        return try {
+            val result = db.collection("users")
+                .document(CURRENT_USER)
+                .collection("ratings")
+                .document("$movieId")
+                .get()
+                .await()
+            result.toObject(Rating::class.java)
+        } catch (e: Exception) {
+            Log.e("Movie Repository", "Could not receive Rating", e)
+            null
+        }
     }
 
     suspend fun getListsContainingMovie(movieId: Int): List<String> {
-        val snapshot = db.collection("users")
-            .document(CURRENT_USER)
-            .collection("lists")
-            .whereArrayContains("movies", movieId)
-            .get()
-            .await()
-        return snapshot.documents.map { it.id }
+        return try {
+            val snapshot = db.collection("users")
+                .document(CURRENT_USER)
+                .collection("lists")
+                .whereArrayContains("movies", movieId)
+                .get()
+                .await()
+            snapshot.documents.map { it.id }
+        } catch (e: Exception) {
+            Log.e("Movie Repository", "Could not receive Lists", e)
+            emptyList()
+        }
     }
 
-    suspend fun getMovieProfile(movieId: Int): MovieProfile {
-        return MovieProfile()
+    suspend fun getMovieProfile(movieId: Int): MovieProfile? {
+        return withContext(Dispatchers.IO) {
+            val apiMovieDetails = async { getApiMovieDetails(movieId) }
+            val potentialUserRating = async { getDbMovieRating(movieId) }
+            val containingLists = async { getListsContainingMovie(movieId) }
+
+            val details = apiMovieDetails.await() ?: return@withContext null
+
+            MovieProfile(
+                movieDetails = details,
+                rating = potentialUserRating.await(),
+                containingLists = containingLists.await()
+            )
+        }
     }
-
-
-
-
-
-
 
 //    suspend fun getMovieOverview(userId: String, movieId: Int): MovieOverviewDto? {
 //        val movieId = "test_user"
