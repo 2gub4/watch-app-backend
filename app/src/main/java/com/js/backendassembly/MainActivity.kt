@@ -17,8 +17,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.js.backendassembly.data.api.ApiManager
-import com.js.backendassembly.data.api.EndpointType
+// Zakomentowane importy z uwagi na usunięcie EndpointType i przebudowę ApiManager
+// import com.js.backendassembly.data.api.ApiManager
+// import com.js.backendassembly.data.api.EndpointType
+import com.js.backendassembly.data.firebase.MovieFirestore
+import com.js.backendassembly.data.repo.MoviesRepository
+import com.js.backendassembly.domain.models.MovieProfile
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -30,7 +34,98 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ApiTesterScreen()
+                    Column(modifier = Modifier.fillMaxSize()) {
+//                        Box(modifier = Modifier.weight(1f)) {
+//                            ApiTesterScreen()
+//                        }
+                        Spacer(modifier = Modifier.height(200.dp))
+                        DatabaseAndProfileSection()
+                        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DatabaseAndProfileSection() {
+    val coroutineScope = rememberCoroutineScope()
+    var seedingStatus by remember { mutableStateOf("") }
+    var movieProfile by remember { mutableStateOf<MovieProfile?>(null) }
+    var profileStatus by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    seedingStatus = "Trwa seeding..."
+                    MovieFirestore.initialSeeding()
+                    seedingStatus = "Seeding zakończony!"
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp)
+        ) {
+            Text("Wykonaj Firebase Initial Seeding", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        if (seedingStatus.isNotEmpty()) {
+            Text(text = seedingStatus, modifier = Modifier.padding(top = 4.dp), color = Color.Gray)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    profileStatus = "Pobieranie profilu..."
+                    // Przykładowe ID filmu 11
+                    val profile = MoviesRepository.getMovieProfile(11)
+                    if (profile != null) {
+                        movieProfile = profile
+                        profileStatus = "Pobrano pomyślnie!"
+                    } else {
+                        profileStatus = "Błąd: Nie udało się pobrać profilu."
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp)
+        ) {
+            Text("Pobierz profil filmu (ID: 11)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        if (profileStatus.isNotEmpty()) {
+            Text(text = profileStatus, modifier = Modifier.padding(top = 4.dp), color = Color.Gray)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Prezentacja obiektu MovieProfile, jeśli nie jest nullem
+        movieProfile?.let { profile ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp) // Ograniczenie wysokości, żeby nie zająć całego ekranu
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(text = "Tytuł: ${profile.movieDetails.title}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Język: ${profile.movieDetails.originalLanguage}", fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Własna ocena: ${profile.rating?.overallRating ?: "Brak"}", color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Znajduje się w listach: ${if (profile.containingLists.isEmpty()) "Brak" else profile.containingLists.joinToString()}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Opis: ${profile.movieDetails.overview}", fontSize = 12.sp)
                 }
             }
         }
@@ -54,7 +149,7 @@ fun ApiTesterScreen() {
     var selectedMode by remember { mutableStateOf(QueryMode.MOVIE) }
     var currentImageUrl by remember { mutableStateOf<String?>(null) }
 
-    val coroutineScope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope() // Zachowane do ewentualnego przyszłego użycia
     val pageNumber = "1"
 
     Column(
@@ -63,7 +158,7 @@ fun ApiTesterScreen() {
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(64.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
@@ -125,6 +220,11 @@ fun ApiTesterScreen() {
             onClick = {
                 requestedUrl = ""
                 currentImageUrl = null
+
+                // ZAKOMENTOWANE: Ze względu na usunięcie EndpointType i przebudowę komunikacji z API.
+                // Kiedy zaimplementujesz nowe podejście (np. bezpośrednie wołanie MovieApi w repozytorium),
+                // możesz tutaj wstrzyknąć nowe metody.
+                /*
                 resultText = "processing..."
                 val endpointType = when (selectedMode) {
                     QueryMode.MOVIE -> EndpointType.MOVIE
@@ -151,6 +251,10 @@ fun ApiTesterScreen() {
                         }
                     )
                 }
+                */
+
+                // TYMCZASOWE ZACHOWANIE:
+                resultText = "Testowanie API zostało wstrzymane (brak EndpointType). Zaktualizuj logikę zgodnie z nową architekturą."
             },
             modifier = Modifier
                 .fillMaxWidth()

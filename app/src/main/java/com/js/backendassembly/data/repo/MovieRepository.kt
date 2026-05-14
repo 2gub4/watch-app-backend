@@ -14,13 +14,16 @@ const val CURRENT_USER: String = "test_user"
 
 
 object MoviesRepository {
-    private val db = MovieFirestore
     private val api = MovieApi
 
     suspend fun getApiMovieDetails(movieId: Int): MovieDetailsDto? {
         return when (val response = api.fetchMovieDetails(movieId)) {
             is MovieApiResult.OnSuccess -> response.data
-            is MovieApiResult.OnFailure -> { Log.e("Movie Repository", "Could not recieve MovieDetailsDto", response.error); null }
+            is MovieApiResult.OnFailure -> {
+                Log.e("Movie Repository", "Could not recieve MovieDetailsDto", response.error)
+                print("Error: could not get movie details from TMDB Api")
+                null
+            }
         }
     }
 

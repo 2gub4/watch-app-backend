@@ -40,9 +40,6 @@ val customListTest = UserList(
     series = listOf()
 )
 
-
-
-
 object MovieFirestore {
     val firestoreDb by lazy { Firebase.firestore }
 
@@ -100,6 +97,7 @@ object MovieFirestore {
                 snapshot.documents.map { it.id }
             } catch (e: Exception) {
                 Log.e("Movie Repository", "Could not receive Lists", e)
+                print("could not access lists collection to recieve data")
                 emptyList()
             }
         }
@@ -111,7 +109,6 @@ object MovieFirestore {
     }
 
     object MovieData {
-
         suspend fun getMovieRating(userId: String, movieId: String): Rating? {
             return try {
                 val result = firestoreDb.collection("users")
@@ -123,6 +120,7 @@ object MovieFirestore {
                 result.toObject(Rating::class.java)
             } catch (e: Exception) {
                 Log.e("Movie Repository", "Could not receive Rating", e)
+                print("Error: could not access document with rating")
                 null
             }
         }

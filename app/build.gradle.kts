@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -42,6 +43,8 @@ android {
 }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:34.13.0"))
+    implementation("com.google.firebase:firebase-analytics")
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
@@ -59,7 +62,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.ui)
     implementation(libs.firebase.firestore)
-    implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.auth)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
