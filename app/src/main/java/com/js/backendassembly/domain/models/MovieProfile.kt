@@ -1,4 +1,4 @@
-package com.js.backendassembly.domain
+package com.js.backendassembly.domain.models
 
 import com.js.backendassembly.data.models.dbmodels.Rating
 import com.js.backendassembly.data.models.dtos.MovieDetailsDto
