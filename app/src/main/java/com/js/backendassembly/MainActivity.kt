@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
 //                        Box(modifier = Modifier.weight(1f)) {
 //                            ApiTesterScreen()
 //                        }
-                        Spacer(modifier = Modifier.height(200.dp))
+                        Spacer(modifier = Modifier.height(100.dp))
                         DatabaseAndProfileSection()
                         HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant)
                     }
@@ -109,7 +109,7 @@ fun DatabaseAndProfileSection() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 200.dp) // Ograniczenie wysokości, żeby nie zająć całego ekranu
+                    .heightIn(max = 700.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -117,6 +117,8 @@ fun DatabaseAndProfileSection() {
                         .padding(16.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
+                    AsyncImage(model="${MoviesRepository.POSTERS_BASE_URL}${profile.movieDetails.posterPath}", contentDescription = "${profile.movieDetails.title} poster")
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(text = "Tytuł: ${profile.movieDetails.title}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(text = "Język: ${profile.movieDetails.originalLanguage}", fontSize = 14.sp)

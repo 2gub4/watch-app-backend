@@ -15,6 +15,7 @@ const val CURRENT_USER: String = "test_user"
 
 object MoviesRepository {
     private val api = MovieApi
+    const val POSTERS_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
     suspend fun getApiMovieDetails(movieId: Int): MovieDetailsDto? {
         return when (val response = api.fetchMovieDetails(movieId)) {
