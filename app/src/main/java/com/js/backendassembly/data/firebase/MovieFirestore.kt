@@ -4,37 +4,40 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import com.js.backendassembly.data.models.dbmodels.Rating
+import com.js.backendassembly.data.models.dbmodels.User
+import com.js.backendassembly.data.models.dbmodels.UserList
 import kotlinx.coroutines.tasks.await
 
-val userLists = listOf(1, 2, 3, 4)
-val userRatedMovies = listOf(1111, 2222, 3333, 4444)
-
-val favouritesTemplate = hashMapOf(
-    "list_name" to "Ulubione",
-    "list_description" to "Filmy, które wyjątkowo doceniłeś",
-    "favourite_movies_ids" to emptyList<Int>()
+val testUsr = User(
+    uid = "test_user",
+    email = "test@example.com",
+    username = "test_user_123",
+    pfpPath = "pfp.png",
+    watchedMoviesCount = 0,
+    watchedSeriesCount = 0,
+    favouritesCount = 0,
+    ratingsCount = 0
 )
 
-val bucketlistTemplate = hashMapOf(
-    "list_name" to "Kupka Wstydu",
-    "list_description" to "Filmy, które już dawno powinieneś obejrzeć",
-    "bucketlist_movies_ids" to emptyList<Int>()
+val favouritesTemplate = UserList(
+    name = "Ulubione",
+    description = "Filmy, które wyjątkowo doceniłeś",
+    movies = emptyList(),
+    series = emptyList()
 )
 
-val testUsr = hashMapOf(
-    "uid" to "123456789dsfhsd",
-    "email" to "test@example.com",
-    "display_name" to "test_user_123",
-    "date_of_birth" to "2004-01-01",
-    "date_of_registration" to "2026-13-05",
-    "user_lists" to userLists,
-    "predefined_lists" to listOf(favouritesTemplate, bucketlistTemplate),
-    "rated_movies" to userRatedMovies,
-    "watched_movies_cout" to 41,
-    "watched_series_cout" to 13,
-    "favourites_count" to 12,
-    "rated_movies_count" to userRatedMovies.size,
-    //"pfp_path" to "pfp.png"
+val bucketlistTemplate = UserList(
+    name = "Kupka Wstydu",
+    description = "Filmy, które już dawno powinieneś był obejrzeć",
+    movies = emptyList(),
+    series = emptyList()
+)
+
+val customListTest = UserList(
+    name = "Guilty Pleasures",
+    description = "Słabe produkcje, dobra zabawa",
+    movies = listOf(1022690),
+    series = listOf()
 )
 
 
@@ -43,7 +46,16 @@ val testUsr = hashMapOf(
 object MovieFirestore {
     val firestoreDb by lazy { Firebase.firestore }
 
-    suspend fun initialSeeding() {}
+    suspend fun initialSeeding() {
+        try {
+            firestoreDb.collection("users").document(testUsr.uid).set(testUsr).await()
+            firestoreDb.collection("users").document(testUsr.uid).collection("lists").document("favourites").set(favouritesTemplate).await()
+            firestoreDb.collection("users").document(testUsr.uid).collection("lists").document("bucketlist").set(bucketlistTemplate).await()
+            firestoreDb.collection("users").document(testUsr.uid).collection("lists").document().set(customListTest).await()
+        } catch (e: Exception) {
+            Log.e("MovieFirestore", "Seeding Failure", e)
+        }
+    }
 
     suspend fun getDbMovieRating(userId: String, movieId: String): Rating? {
         return try {

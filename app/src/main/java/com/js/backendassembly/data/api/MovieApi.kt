@@ -53,6 +53,11 @@ interface TmdbApi {
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false
     ): MoviesPageDto
+
+    @GET("search/multi")
+    suspend fun searchMulti(
+
+    ): MoviesPageDto /*might need another wrapper do decide whether its a tv series or movie OR needs generalisation on MovieDetailsDto so it could contain tv series data*/
 }
 
 object MovieApi {
@@ -83,7 +88,7 @@ object MovieApi {
         }
     }
 
-    suspend fun fetchMoviesPage(listType: String, pageNumber: Int) : MovieApiResult<MoviesPageDto> {
+    suspend fun fetchMoviesPage(listType: String /*could be changed to enum*/, pageNumber: Int) : MovieApiResult<MoviesPageDto> {
         return withContext(Dispatchers.IO) {
             try {
                 val moviesPageDto = when (listType) {
