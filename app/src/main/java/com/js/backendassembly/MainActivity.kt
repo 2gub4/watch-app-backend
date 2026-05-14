@@ -126,6 +126,10 @@ fun DatabaseAndProfileSection() {
                     Text(text = "Znajduje się w listach: ${if (profile.containingLists.isEmpty()) "Brak" else profile.containingLists.joinToString()}")
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Opis: ${profile.movieDetails.overview}", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Obsada: ${profile.getTop5Actors().joinToString { it.name }}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Reżyseria: ${profile.getDirector().name}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         }

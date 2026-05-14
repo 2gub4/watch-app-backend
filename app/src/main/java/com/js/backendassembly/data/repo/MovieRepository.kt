@@ -30,7 +30,7 @@ object MoviesRepository {
     suspend fun getMovieProfile(movieId: Int): MovieProfile? {
         return withContext(Dispatchers.IO) {
             val apiMovieDetails = async { getApiMovieDetails(movieId) }
-            val potentialUserRating = async { MovieFirestore.MovieData.getMovieRating(CURRENT_USER, movieId.toString()) }
+            val potentialUserRating = async { MovieFirestore.RatingData.getMovieRating(CURRENT_USER, movieId.toString()) }
             val containingLists = async { MovieFirestore.ListData.getListsContainingMovie(CURRENT_USER, movieId.toString()) }
             val details = apiMovieDetails.await() ?: return@withContext null
             MovieProfile(
