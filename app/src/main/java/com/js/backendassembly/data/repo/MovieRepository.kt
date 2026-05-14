@@ -9,7 +9,6 @@ import com.js.backendassembly.data.models.dtos.MovieDetailsDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import kotlin.collections.emptyList
 
 const val CURRENT_USER: String = "test_user"
 
@@ -28,8 +27,8 @@ object MoviesRepository {
     suspend fun getMovieProfile(movieId: Int): MovieProfile? {
         return withContext(Dispatchers.IO) {
             val apiMovieDetails = async { getApiMovieDetails(movieId) }
-            val potentialUserRating = async { db.getDbMovieRating(CURRENT_USER, movieId.toString()) }
-            val containingLists = async { db.getDbListsContainingMovie(CURRENT_USER, movieId.toString()) }
+            val potentialUserRating = async { MovieFirestore.MovieData.getMovieRating(CURRENT_USER, movieId.toString()) }
+            val containingLists = async { MovieFirestore.ListData.getListsContainingMovie(CURRENT_USER, movieId.toString()) }
             val details = apiMovieDetails.await() ?: return@withContext null
             MovieProfile(
                 movieDetails = details,

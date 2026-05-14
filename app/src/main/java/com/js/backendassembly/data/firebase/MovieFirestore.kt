@@ -57,61 +57,74 @@ object MovieFirestore {
         }
     }
 
-    suspend fun getDbMovieRating(userId: String, movieId: String): Rating? {
-        return try {
-            val result = firestoreDb.collection("users")
-                .document(userId)
-                .collection("ratings")
-                .document(movieId)
-                .get()
-                .await()
-            result.toObject(Rating::class.java)
-        } catch (e: Exception) {
-            Log.e("Movie Repository", "Could not receive Rating", e)
-            null
+    object UserData {
+        suspend fun getUserLists(userId: String): List<UserList> {
+            return try {
+                val snapshot = firestoreDb.collection("users")
+                    .document(userId)
+                    .collection("lists")
+                    .get()
+                    .await()
+                snapshot.toObjects(UserList::class.java)
+            } catch (e: Exception) {
+                Log.e("Movie Repository", "Could not receive Lists of user: $userId", e)
+                emptyList()
+            }
         }
     }
 
-    suspend fun getDbListsContainingMovie(userId: String, movieId: String): List<String> {
-        return try {
-            val snapshot = firestoreDb.collection("users")
-                .document(userId)
-                .collection("lists")
-                .whereArrayContains("movies", movieId)
-                .get()
-                .await()
-            snapshot.documents.map { it.id }
-        } catch (e: Exception) {
-            Log.e("Movie Repository", "Could not receive Lists", e)
-            emptyList()
+    object ListData {
+        suspend fun createNewUserList(userId: String, newList: UserList) {
+            try {
+                val listsCollection = firestoreDb.collection("users")
+                    .document(userId)
+                    .collection("lists")
+                if (newList.id.isNotEmpty()) {
+                    listsCollection.document(newList.id).set(newList).await()
+                } else {
+                    listsCollection.document().set(newList).await()
+                }
+            } catch (e: Exception) {
+                Log.e("Movie Repository", "Could not add user list to database", e)
+            }
         }
+
+        suspend fun getListsContainingMovie(userId: String, movieId: String): List<String> {
+            return try {
+                val snapshot = firestoreDb.collection("users")
+                    .document(userId)
+                    .collection("lists")
+                    .whereArrayContains("movies", movieId)
+                    .get()
+                    .await()
+                snapshot.documents.map { it.id }
+            } catch (e: Exception) {
+                Log.e("Movie Repository", "Could not receive Lists", e)
+                emptyList()
+            }
+        }
+
     }
 
-    //    suspend fun getUserLists(userId: String): List<MovieList> {
-    //        return try {
-    //            val snapshot = db.collection("users")
-    //                .document(userId)
-    //                .collection("custom_lists")
-    //                .get()
-    //                .await()
-    //
-    //            snapshot.toObjects(MovieList::class.java)
-    //        } catch (e: Exception) {
-    //            emptyList()
-    //        }
-    //    }
-    //
-    //
-    //    suspend fun createNewUserList(userId: String, newList: MovieList) {
-    //        try {
-    //            db.collection("users")
-    //                .document(userId)
-    //                .collection("custom_lists")
-    //                .document(newList.id)
-    //                .set(newList)
-    //                .await()
-    //        } catch (e: Exception) {
-    //            e.printStackTrace()
-    //        }
-    //    }
+    object RatingData {
+        //to implement
+    }
+
+    object MovieData {
+
+        suspend fun getMovieRating(userId: String, movieId: String): Rating? {
+            return try {
+                val result = firestoreDb.collection("users")
+                    .document(userId)
+                    .collection("ratings")
+                    .document(movieId)
+                    .get()
+                    .await()
+                result.toObject(Rating::class.java)
+            } catch (e: Exception) {
+                Log.e("Movie Repository", "Could not receive Rating", e)
+                null
+            }
+        }
+    }
 }
