@@ -1,0 +1,2 @@
+1. stworzono DTO dla szczegółów na temat serialu
+2.
