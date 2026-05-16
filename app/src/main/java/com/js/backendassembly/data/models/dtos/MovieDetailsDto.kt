@@ -10,6 +10,7 @@ data class MovieDetailsDto(
     @SerialName("title") val title: String,
     @SerialName("overview") val overview: String,
     @SerialName("original_language") val originalLanguage: String,
+    @SerialName("origin_country") val originalCountry: List<String> = emptyList(),
     @SerialName("release_date") val releaseDate: String,
     @SerialName("poster_path") val posterPath: String? = null,
     @SerialName("genres") val genres: List<GenreDto> = emptyList(),

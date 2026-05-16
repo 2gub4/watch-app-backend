@@ -3,6 +3,7 @@ package com.js.backendassembly.data.api
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.js.backendassembly.data.models.dtos.MovieDetailsDto
 import com.js.backendassembly.data.models.dtos.MoviesPageDto
+import com.js.backendassembly.data.models.dtos.TvSeriesDetailsDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -54,6 +55,17 @@ interface TmdbApi {
         @Query("include_adult") includeAdultContent: Boolean = false
     ): MoviesPageDto
 
+    @GET("tv/{tv_id}")
+    suspend fun getTvSeriesDetails(
+        @Path("series_id") movieId: Int,
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false,
+        @Query("append_to_response") appendToResponse: String = "credits"
+    ): TvSeriesDetailsDto //
+
+
+    // endpoints for media searching
     @GET("search/multi")
     suspend fun searchMulti(
 
