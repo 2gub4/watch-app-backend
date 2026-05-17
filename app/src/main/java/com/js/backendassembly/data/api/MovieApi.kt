@@ -55,21 +55,53 @@ interface TmdbApi {
         @Query("include_adult") includeAdultContent: Boolean = false
     ): MoviesPageDto
 
-    @GET("tv/{tv_id}")
+    @GET("tv/{series_id}")
     suspend fun getTvSeriesDetails(
         @Path("series_id") movieId: Int,
         @Query("api_key") apiKey: String? = null,
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false,
         @Query("append_to_response") appendToResponse: String = "credits"
-    ): TvSeriesDetailsDto //
+    ): TvSeriesDetailsDto
 
+    @GET("tv/popular")
+    suspend fun getPopularTvSeries(
+        @Query("page") page: Int,
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false
+    ): MoviesPageDto // or SeriesPageDto (gotta compare the structure of both)
 
-    // endpoints for media searching
-    @GET("search/multi")
-    suspend fun searchMulti(
+    @GET("tv/on_the_air")
+    suspend fun getOnAirTvSeries(
+        @Query("page") page: Int,
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false
+    ): MoviesPageDto // or SeriesPageDto (gotta compare the structure of both)
 
-    ): MoviesPageDto /*might need another wrapper do decide whether its a tv series or movie OR needs generalisation on MovieDetailsDto so it could contain tv series data*/
+    @GET("tv/top_rated")
+    suspend fun getTopRatedTvSeries(
+        @Query("page") page: Int,
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false
+    ): MoviesPageDto // or SeriesPageDto (gotta compare the structure of both)
+
+    // endpoints for searching
+    @GET("search/movie")
+    suspend fun searchMovies(
+        @Query("page") page: Int,
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false
+    ) : MoviesPageDto
+
+    //    @GET("search/multi")
+    //    suspend fun searchMulti(
+    //
+    //    ): MoviesPageDto /*might need another wrapper do decide whether its a tv series or movie OR needs generalisation on MovieDetailsDto so it could contain tv series data*/
+
 }
 
 object MovieApi {

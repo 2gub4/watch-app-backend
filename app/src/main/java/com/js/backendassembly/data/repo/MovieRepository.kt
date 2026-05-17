@@ -17,6 +17,10 @@ object MoviesRepository {
     private val api = MovieApi
     const val POSTERS_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
+//    init {
+//        getCurrentUserData()
+//    }
+
     suspend fun getApiMovieDetails(movieId: Int): MovieDetailsDto? {
         return when (val response = api.fetchMovieDetails(movieId)) {
             is MovieApiResult.OnSuccess -> response.data
@@ -41,5 +45,4 @@ object MoviesRepository {
             )
         }
     }
-
 }
