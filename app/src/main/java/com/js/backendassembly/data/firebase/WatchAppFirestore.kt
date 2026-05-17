@@ -4,9 +4,9 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
-import com.js.backendassembly.data.models.dbmodels.Rating
-import com.js.backendassembly.data.models.dbmodels.User
-import com.js.backendassembly.data.models.dbmodels.UserList
+import com.js.backendassembly.data.models.entities.Rating
+import com.js.backendassembly.data.models.entities.User
+import com.js.backendassembly.data.models.entities.UserList
 import kotlinx.coroutines.tasks.await
 
 val testUsr = User(
@@ -130,7 +130,6 @@ object MovieFirestore {
                 snapshot.documents.mapNotNull { it.getString("name") }
             } catch (e: Exception) {
                 Log.e("Movie Repository", "Could not receive Lists", e)
-                print("could not access lists collection to recieve data")
                 emptyList()
             }
         }

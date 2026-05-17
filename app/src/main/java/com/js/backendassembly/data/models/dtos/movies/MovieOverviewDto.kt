@@ -1,4 +1,4 @@
-package com.js.backendassembly.data.models.dtos
+package com.js.backendassembly.data.models.dtos.movies
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

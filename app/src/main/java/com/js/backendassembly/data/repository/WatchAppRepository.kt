@@ -1,11 +1,12 @@
-package com.js.backendassembly.data.repo
+package com.js.backendassembly.data.repository
 
 import android.util.Log
-import com.js.backendassembly.data.api.MovieApi
-import com.js.backendassembly.data.api.MovieApiResult
+import com.js.backendassembly.data.api.TmdbApiResult
+import com.js.backendassembly.data.api.TmdbApi
 import com.js.backendassembly.data.firebase.MovieFirestore
-import com.js.backendassembly.domain.models.MovieProfile
-import com.js.backendassembly.data.models.dtos.MovieDetailsDto
+import com.js.backendassembly.domain.models.profiles.MovieProfile
+import com.js.backendassembly.data.models.dtos.movies.MovieDetailsDto
+import com.js.backendassembly.data.models.dtos.movies.MoviesPageDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -14,19 +15,13 @@ const val CURRENT_USER: String = "test_user"
 
 
 object MoviesRepository {
-    private val api = MovieApi
     const val POSTERS_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
-//    init {
-//        getCurrentUserData()
-//    }
-
     suspend fun getApiMovieDetails(movieId: Int): MovieDetailsDto? {
-        return when (val response = api.fetchMovieDetails(movieId)) {
-            is MovieApiResult.OnSuccess -> response.data
-            is MovieApiResult.OnFailure -> {
+        return when (val response = TmdbApi.MoviesData.fetchMovieDetails(movieId)) {
+            is TmdbApiResult.OnSuccess -> response.data
+            is TmdbApiResult.OnFailure -> {
                 Log.e("Movie Repository", "Could not recieve MovieDetailsDto", response.error)
-                print("Error: could not get movie details from TMDB Api")
                 null
             }
         }
@@ -45,4 +40,17 @@ object MoviesRepository {
             )
         }
     }
+
+    suspend fun getMoviePage(pageNumber: Int, listType: String): MoviesPageDto? {
+        return withContext(Dispatchers.IO) {
+            when (val response = TmdbApi.MoviesData.fetchMoviesPage(listType, pageNumber)) {
+                is TmdbApiResult.OnSuccess -> response.data
+                is TmdbApiResult.OnFailure -> {
+                    Log.e("Movie Repository", "Could not recieve MoviesPageDto", response.error)
+                    null
+                }
+            }
+        }
+    }
+
 }

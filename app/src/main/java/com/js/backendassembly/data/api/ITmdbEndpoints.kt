@@ -1,19 +1,14 @@
 package com.js.backendassembly.data.api
 
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.js.backendassembly.data.models.dtos.MovieDetailsDto
-import com.js.backendassembly.data.models.dtos.MoviesPageDto
-import com.js.backendassembly.data.models.dtos.TvSeriesDetailsDto
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import retrofit2.Retrofit
+import com.js.backendassembly.data.models.dtos.movies.MovieDetailsDto
+import com.js.backendassembly.data.models.dtos.movies.MoviesPageDto
+import com.js.backendassembly.data.models.dtos.shows.TvSeriesDetailsDto
+import com.js.backendassembly.data.models.dtos.shows.TvSeriesPageDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-interface TmdbApi {
+interface ITmdbEndpoints {
     @GET("movie/{movie_id}")
     suspend fun getMovieDetails(
         @Path("movie_id") movieId: Int,
@@ -57,7 +52,7 @@ interface TmdbApi {
 
     @GET("tv/{series_id}")
     suspend fun getTvSeriesDetails(
-        @Path("series_id") movieId: Int,
+        @Path("series_id") seriesId: Int,
         @Query("api_key") apiKey: String? = null,
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false,
@@ -70,7 +65,7 @@ interface TmdbApi {
         @Query("api_key") apiKey: String? = null,
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false
-    ): MoviesPageDto // or SeriesPageDto (gotta compare the structure of both)
+    ): TvSeriesPageDto
 
     @GET("tv/on_the_air")
     suspend fun getOnAirTvSeries(
@@ -78,7 +73,7 @@ interface TmdbApi {
         @Query("api_key") apiKey: String? = null,
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false
-    ): MoviesPageDto // or SeriesPageDto (gotta compare the structure of both)
+    ): TvSeriesPageDto
 
     @GET("tv/top_rated")
     suspend fun getTopRatedTvSeries(
@@ -86,7 +81,7 @@ interface TmdbApi {
         @Query("api_key") apiKey: String? = null,
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false
-    ): MoviesPageDto // or SeriesPageDto (gotta compare the structure of both)
+    ): TvSeriesPageDto
 
     // endpoints for searching
     @GET("search/movie")
@@ -95,57 +90,13 @@ interface TmdbApi {
         @Query("api_key") apiKey: String? = null,
         @Query("language") language: String? = null,
         @Query("include_adult") includeAdultContent: Boolean = false
-    ) : MoviesPageDto
+    ): MoviesPageDto
 
-    //    @GET("search/multi")
-    //    suspend fun searchMulti(
-    //
-    //    ): MoviesPageDto /*might need another wrapper do decide whether its a tv series or movie OR needs generalisation on MovieDetailsDto so it could contain tv series data*/
-
-}
-
-object MovieApi {
-    private const val API_KEY = "7a0cf0cb349b8912480426231b4faf51"
-    private const val BASE_URL = "https://api.themoviedb.org/3/"
-
-    private const val LANG_EN = "en-US"
-    private const val LANG_PL = "pl-PL"
-
-    private val jsonParser = Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-    }
-    private val api = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .addConverterFactory(jsonParser.asConverterFactory("application/json".toMediaType()))
-        .build()
-        .create(TmdbApi::class.java)
-
-    suspend fun fetchMovieDetails(movieId: Int): MovieApiResult<MovieDetailsDto> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val movieDetailsDto = api.getMovieDetails(movieId, API_KEY, LANG_PL)
-                MovieApiResult.OnSuccess(movieDetailsDto)
-            } catch (e: Throwable) {
-                MovieApiResult.OnFailure(e)
-            }
-        }
-    }
-
-    suspend fun fetchMoviesPage(listType: String /*could be changed to enum*/, pageNumber: Int) : MovieApiResult<MoviesPageDto> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val moviesPageDto = when (listType) {
-                    "popular" -> api.getPopularMovies(pageNumber, API_KEY, LANG_PL)
-                    "top_rated" -> api.getTopRatedMovies(pageNumber, API_KEY, LANG_PL)
-                    "upcoming" -> api.getUpcomingMovies(pageNumber, API_KEY, LANG_PL)
-                    "now_playing" -> api.getNowPlayingMovies(pageNumber, API_KEY, LANG_PL)
-                    else -> throw IllegalArgumentException("Invalid list type: $listType")
-                }
-                MovieApiResult.OnSuccess(moviesPageDto)
-            } catch (e: Throwable) {
-                MovieApiResult.OnFailure(e)
-            }
-        }
-    }
+    @GET("search/tv")
+    suspend fun searchTvSeries(
+        @Query("page") page: Int,
+        @Query("api_key") apiKey: String? = null,
+        @Query("language") language: String? = null,
+        @Query("include_adult") includeAdultContent: Boolean = false
+    ): TvSeriesPageDto
 }

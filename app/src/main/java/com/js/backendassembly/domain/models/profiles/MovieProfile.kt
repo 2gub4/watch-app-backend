@@ -1,9 +1,9 @@
-package com.js.backendassembly.domain.models
+package com.js.backendassembly.domain.models.profiles
 
-import com.js.backendassembly.data.models.dbmodels.Rating
-import com.js.backendassembly.data.models.dtos.CastMemberDto
-import com.js.backendassembly.data.models.dtos.CrewMemberDto
-import com.js.backendassembly.data.models.dtos.MovieDetailsDto
+import com.js.backendassembly.data.models.entities.Rating
+import com.js.backendassembly.data.models.dtos.shared.CastMemberDto
+import com.js.backendassembly.data.models.dtos.shared.CrewMemberDto
+import com.js.backendassembly.data.models.dtos.movies.MovieDetailsDto
 
 class MovieProfile(
     val movieDetails: MovieDetailsDto,

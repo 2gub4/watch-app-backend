@@ -3,8 +3,11 @@ package com.js.backendassembly
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,15 +17,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 // Zakomentowane importy z uwagi na usunięcie EndpointType i przebudowę ApiManager
 // import com.js.backendassembly.data.api.ApiManager
 // import com.js.backendassembly.data.api.EndpointType
-import com.js.backendassembly.data.firebase.MovieFirestore
-import com.js.backendassembly.data.repo.MoviesRepository
-import com.js.backendassembly.domain.models.MovieProfile
+import com.js.backendassembly.data.models.dtos.movies.MovieOverviewDto
+import com.js.backendassembly.data.repository.MoviesRepository
+import com.js.backendassembly.domain.models.profiles.MovieProfile
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -38,9 +42,22 @@ class MainActivity : ComponentActivity() {
 //                        Box(modifier = Modifier.weight(1f)) {
 //                            ApiTesterScreen()
 //                        }
-                        Spacer(modifier = Modifier.height(100.dp))
-                        DatabaseAndProfileSection()
-                        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+                        // Zmieniono na LazyColumn dla lepszej obsługi wielu sekcji z możliwością scrollowania
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 24.dp)
+                        ) {
+                            item {
+                                Spacer(modifier = Modifier.height(100.dp))
+                                ProfileSection()
+                                HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                            item {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                MoviesListSection()
+                            }
+                        }
                     }
                 }
             }
@@ -49,9 +66,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DatabaseAndProfileSection() {
+fun ProfileSection() {
     val coroutineScope = rememberCoroutineScope()
-    var seedingStatus by remember { mutableStateOf("") }
+    //var seedingStatus by remember { mutableStateOf("") }
     var movieProfile by remember { mutableStateOf<MovieProfile?>(null) }
     var profileStatus by remember { mutableStateOf("") }
 
@@ -61,30 +78,28 @@ fun DatabaseAndProfileSection() {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    seedingStatus = "Trwa seeding..."
-                    MovieFirestore.initialSeeding()
-                    seedingStatus = "Seeding zakończony!"
-                }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp)
-        ) {
-            Text("Wykonaj Firebase Initial Seeding", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
-
-        if (seedingStatus.isNotEmpty()) {
-            Text(text = seedingStatus, modifier = Modifier.padding(top = 4.dp), color = Color.Gray)
-        }
-
+//        Button(
+//            onClick = {
+//                coroutineScope.launch {
+//                    seedingStatus = "Trwa seeding..."
+//                    MovieFirestore.initialSeeding()
+//                    seedingStatus = "Seeding zakończony!"
+//                }
+//            },
+//            modifier = Modifier.fillMaxWidth().height(50.dp)
+//        ) {
+//            Text("Wykonaj Firebase Initial Seeding", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+//        }
+//
+//        if (seedingStatus.isNotEmpty()) {
+//            Text(text = seedingStatus, modifier = Modifier.padding(top = 4.dp), color = Color.Gray)
+//        }
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
                 coroutineScope.launch {
                     profileStatus = "Pobieranie profilu..."
-                    // Przykładowe ID filmu 11
-                    val profile = MoviesRepository.getMovieProfile(11)
+                    val profile = MoviesRepository.getMovieProfile(803796)
                     if (profile != null) {
                         movieProfile = profile
                         profileStatus = "Pobrano pomyślnie!"
@@ -95,7 +110,7 @@ fun DatabaseAndProfileSection() {
             },
             modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
-            Text("Pobierz profil filmu (ID: 11)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Pobierz profil filmu (ID: 803796)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         if (profileStatus.isNotEmpty()) {
@@ -104,18 +119,19 @@ fun DatabaseAndProfileSection() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Prezentacja obiektu MovieProfile, jeśli nie jest nullem
+        // Movie Profile
         movieProfile?.let { profile ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 700.dp)
+                    .heightIn(max = 700.dp) // Zostawiamy ograniczenie wysokości, jeśli to konieczne
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
+                    // Usunięto verticalScroll z karty, ponieważ nadrzędny Column zmienił się w LazyColumn.
+                    // Zagnieżdżone scrolle w tym samym kierunku powodują problemy.
                 ) {
                     AsyncImage(model="${MoviesRepository.POSTERS_BASE_URL}${profile.movieDetails.posterPath}", contentDescription = "${profile.movieDetails.title} poster")
                     Spacer(modifier = Modifier.height(12.dp))
@@ -131,9 +147,119 @@ fun DatabaseAndProfileSection() {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Obsada: ${profile.getTop5Actors().joinToString { it.name }}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Reżyseria: ${profile.getDirector().name}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = "Reżyseria: ${profile.getDirector()?.name ?: "Brak"}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun MoviesListSection() {
+    val coroutineScope = rememberCoroutineScope()
+    var moviesList by remember { mutableStateOf<List<MovieOverviewDto>>(emptyList()) }
+    var listStatus by remember { mutableStateOf("") }
+    var listLength by remember { mutableIntStateOf(0) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    listStatus = "Pobieranie listy..."
+                    // Wywołanie repozytorium z listType "now_playing" i stroną 1
+                    val moviesPage = MoviesRepository.getMoviePage(pageNumber = 1, listType = "now_playing")
+
+                    if (moviesPage != null && moviesPage.results.isNotEmpty()) {
+                        moviesList = moviesPage.results
+                        listLength = moviesPage.results.size
+                        listStatus = "Pobrano pomyślnie!"
+                    } else {
+                        moviesList = emptyList()
+                        listLength = 0
+                        listStatus = "Brak danych do wyświetlenia."
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp)
+        ) {
+            Text("Teraz grane filmy (Strona 1)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (listStatus.isNotEmpty()) {
+            Text(text = listStatus, color = Color.Gray, modifier = Modifier.padding(bottom = 4.dp))
+        }
+
+        if (listLength > 0) {
+            Text(
+                text = "Ilość filmów na stronie: $listLength",
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Ręczne wypisanie elementów (ponieważ LazyColumn w LazyColumn to problem w Compose)
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                moviesList.forEach { movie ->
+                    MovieOverviewItem(movie = movie)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MovieOverviewItem(movie: MovieOverviewDto) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable { /* Brak akcji zgodnie z poleceniem */ }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Obrazek
+            if (movie.posterPath != null) {
+                AsyncImage(
+                    model = "${MoviesRepository.POSTERS_BASE_URL}${movie.posterPath}",
+                    contentDescription = "Plakat ${movie.title}",
+                    modifier = Modifier
+                        .size(width = 60.dp, height = 90.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(width = 60.dp, height = 90.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Brak", fontSize = 10.sp, color = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Tytuł
+            Text(
+                text = movie.title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }

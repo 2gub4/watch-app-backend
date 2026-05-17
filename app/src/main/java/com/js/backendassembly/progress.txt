@@ -1,2 +1,4 @@
 1. stworzono DTO dla szczegółów na temat serialu
 2. stworzono interfejs dla profili mediów oraz klasę TvSeriesProfile
+3. stworzono dto dla seriali telewizyjnych
+4. dokonano podziału między filmowymi, a serialowymi modelami dto dla czytelności

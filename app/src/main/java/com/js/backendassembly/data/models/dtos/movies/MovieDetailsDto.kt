@@ -1,5 +1,7 @@
-package com.js.backendassembly.data.models.dtos
+package com.js.backendassembly.data.models.dtos.movies
 
+import com.js.backendassembly.data.models.dtos.shared.CreditsDto
+import com.js.backendassembly.data.models.dtos.shared.GenreDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
